@@ -14,7 +14,7 @@ const SaleForm = () => {
   const [selectedProducts, setSelectedProducts] = useState<(SaleProduct & { available: number })[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredProducts = products.filter(product => 
+  const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.brand.toLowerCase().includes(searchTerm.toLowerCase())
@@ -22,7 +22,7 @@ const SaleForm = () => {
 
   const addProductToSale = (product: Product) => {
     const existingProduct = selectedProducts.find(p => p.id === product._id);
-    
+
     if (existingProduct) {
       if (existingProduct.quantity < existingProduct.available) {
         setSelectedProducts(prev =>
@@ -91,16 +91,20 @@ const SaleForm = () => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Registrar Venta</h2>
           <button
-            onClick={() => setIsOpen(false)}
+            onClick={() => {
+              setIsOpen(false);
+              setSelectedProducts([]);
+            }}
             className="text-gray-500 hover:text-gray-700"
           >
             <X className="w-6 h-6" />
           </button>
+
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
@@ -167,7 +171,16 @@ const SaleForm = () => {
                     >
                       <Plus className="w-5 h-5" />
                     </button>
+                    <button
+                      onClick={() =>
+                        setSelectedProducts(prev => prev.filter(p => p.id !== product.id))
+                      }
+                      className="p-1 text-gray-500 hover:text-gray-700"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
                   </div>
+
                 </div>
               ))}
             </div>

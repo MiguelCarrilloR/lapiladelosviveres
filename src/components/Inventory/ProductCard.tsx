@@ -27,7 +27,7 @@ const ProductCard = ({ product }: { product: Product }) => {
         <input
           className="w-full p-2 border rounded"
           value={editedProduct.name}
-          onChange={e => setEditedProduct({...editedProduct, name: e.target.value})}
+          onChange={e => setEditedProduct({ ...editedProduct, name: e.target.value })}
           placeholder="Nombre del producto"
           required
         />
@@ -35,7 +35,7 @@ const ProductCard = ({ product }: { product: Product }) => {
           type="number"
           className="w-full p-2 border rounded"
           value={editedProduct.price}
-          onChange={e => setEditedProduct({...editedProduct, price: Number(e.target.value)})}
+          onChange={e => setEditedProduct({ ...editedProduct, price: Number(e.target.value) })}
           placeholder="Precio"
           required
         />
@@ -43,28 +43,28 @@ const ProductCard = ({ product }: { product: Product }) => {
           type="number"
           className="w-full p-2 border rounded"
           value={editedProduct.stock}
-          onChange={e => setEditedProduct({...editedProduct, stock: Number(e.target.value)})}
+          onChange={e => setEditedProduct({ ...editedProduct, stock: Number(e.target.value) })}
           placeholder="Stock"
           required
         />
         <input
           className="w-full p-2 border rounded"
           value={editedProduct.category}
-          onChange={e => setEditedProduct({...editedProduct, category: e.target.value})}
+          onChange={e => setEditedProduct({ ...editedProduct, category: e.target.value })}
           placeholder="Categoría"
           required
         />
         <input
           className="w-full p-2 border rounded"
           value={editedProduct.brand}
-          onChange={e => setEditedProduct({...editedProduct, brand: e.target.value})}
+          onChange={e => setEditedProduct({ ...editedProduct, brand: e.target.value })}
           placeholder="Marca"
           required
         />
         <input
           className="w-full p-2 border rounded"
           value={editedProduct.sizeProduct}
-          onChange={e => setEditedProduct({...editedProduct, sizeProduct: e.target.value})}
+          onChange={e => setEditedProduct({ ...editedProduct, sizeProduct: e.target.value })}
           placeholder="Talla"
           required
         />
@@ -100,7 +100,9 @@ const ProductCard = ({ product }: { product: Product }) => {
         <p>Tamaño: {product.sizeProduct}</p>
       </div>
       <div className="flex justify-between items-center">
-        <span className="text-xl font-bold">${product.price}</span>
+        <span className="text-xl font-bold">
+          ${product.price.toLocaleString("es-CO")}
+        </span>
         <span className="text-sm text-gray-500">Stock: {product.stock}</span>
       </div>
       <div className="flex justify-end space-x-2">
