@@ -95,6 +95,17 @@ const Header = () => {
                 <ClipboardList className="w-4 h-4" />
                 <span>Inventario</span>
               </Link>
+              <Link
+                to="/facturacion"
+                className={`px-4 py-2 flex items-center space-x-2 text-sm font-medium transition-all duration-300 rounded-lg ${
+                  isActive("/facturacion")
+                    ? "text-white bg-white/10 backdrop-blur-sm shadow-lg border border-white/20"
+                    : "text-gray-300 hover:text-white hover:bg-white/5 border border-transparent"
+                }`}
+              >
+                <ClipboardList className="w-4 h-4" />
+                <span>Facturación</span>
+              </Link>
             </nav>
 
             {/* Botón de cerrar sesión - Desktop */}
