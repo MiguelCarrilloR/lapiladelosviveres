@@ -5,70 +5,53 @@ import { Plus, X } from "lucide-react";
 import React from "react";
 
 const ProductForm = () => {
-
-  const CLOUDINARY_UPLOAD_PRESET = "epamigue";
-  const CLOUDINARY_CLOUD_NAME = "desqgwtus";
-  const [uploading, setUploading] = useState(false);
   const { addProduct } = useProducts();
   const [isOpen, setIsOpen] = useState(false);
   const [newProduct, setNewProduct] = useState({
     name: "",
-    price: 0,
-    stock: 0,
+    price: "",
+    stock: "",
     category: "",
     brand: "",
     sizeProduct: "",
-    imageUrl: "",
+    imageUrl: "a",
   });
+  const [selectedPercentage, setSelectedPercentage] = useState(30);
 
   const calculateSalePrice = (price: number) => {
-    return price + price * 0.3;
-  };
-
-  const handleImageUpload = async (file: File) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-
-    setUploading(true);
-
-    try {
-      const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      const data = await res.json();
-      setNewProduct((prev) => ({ ...prev, imageUrl: data.secure_url }));
-    } catch (error) {
-      console.error("Error uploading image:", error);
-    } finally {
-      setUploading(false);
-    }
+    return price + price * (selectedPercentage / 100);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Crear un nuevo objeto combinando el nombre y el tamaño
+    // Validar que todos los campos requeridos estén llenos
+    if (!newProduct.name.trim() || !newProduct.price || !newProduct.stock || 
+        !newProduct.category.trim() || !newProduct.brand.trim() || !newProduct.sizeProduct.trim()) {
+      return;
+    }
+
+    // Crear un nuevo objeto asegurando que todos los campos sean strings válidos
     const productToSave = {
-      ...newProduct,
-      name: `${newProduct.name} ${newProduct.sizeProduct}`, // Combinar nombre y tamaño
-      price: calculateSalePrice(newProduct.price),
+      id: Date.now().toString(), // Agregar un ID único
+      name: `${newProduct.name.trim()} ${newProduct.sizeProduct.trim()}`.trim(),
+      price: calculateSalePrice(Number(newProduct.price)),
+      stock: Number(newProduct.stock),
+      category: newProduct.category.trim() || "",
+      brand: newProduct.brand.trim() || "",
+      sizeProduct: newProduct.sizeProduct.trim() || "",
+      imageUrl: newProduct.imageUrl || "a",
     };
 
     await addProduct(productToSave);
     setNewProduct({
       name: "",
-      price: 0,
-      stock: 0,
+      price: "",
+      stock: "",
       category: "",
       brand: "",
       sizeProduct: "",
-      imageUrl: "",
+      imageUrl: "a",
     });
     setIsOpen(false);
   };
@@ -124,17 +107,32 @@ const ProductForm = () => {
             type="number"
             required
             min="0"
+            step="0.01"
             className="mt-1 w-full p-2 border rounded"
             value={newProduct.price}
             onChange={(e) =>
-              setNewProduct({ ...newProduct, price: Number(e.target.value) })
+              setNewProduct({ ...newProduct, price: e.target.value })
             }
           />
-          {newProduct.price > 0 && (
+          <div className="mt-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Porcentaje de ganancia
+            </label>
+            <select
+              className="w-full p-2 border rounded text-sm"
+              value={selectedPercentage}
+              onChange={(e) => setSelectedPercentage(Number(e.target.value))}
+            >
+              <option value={20}>20%</option>
+              <option value={30}>30%</option>
+              <option value={50}>50%</option>
+            </select>
+          </div>
+          {newProduct.price && Number(newProduct.price) > 0 && (
             <div className="mt-2 text-sm">
-              <span className="text-gray-600">Precio de venta (+30%): </span>
+              <span className="text-gray-600">Precio de venta (+{selectedPercentage}%): </span>
               <span className="font-medium text-green-600">
-                ${calculateSalePrice(newProduct.price).toFixed(2)}
+                ${calculateSalePrice(Number(newProduct.price)).toFixed(2)}
               </span>
             </div>
           )}
@@ -151,7 +149,7 @@ const ProductForm = () => {
             className="mt-1 w-full p-2 border rounded"
             value={newProduct.stock}
             onChange={(e) =>
-              setNewProduct({ ...newProduct, stock: Number(e.target.value) })
+              setNewProduct({ ...newProduct, stock: e.target.value })
             }
           />
         </div>
@@ -201,24 +199,6 @@ const ProductForm = () => {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Imagen del producto
-          </label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) handleImageUpload(file);
-            }}
-            className="mt-1 w-full p-2 border rounded"
-          />
-          {uploading && <p className="text-sm text-blue-500">Subiendo imagen...</p>}
-          {newProduct.imageUrl && (
-            <img src={newProduct.imageUrl} alt="Preview" className="mt-2 h-24 object-contain" />
-          )}
-        </div>
         <div className="flex justify-end space-x-2">
           <button
             type="submit"

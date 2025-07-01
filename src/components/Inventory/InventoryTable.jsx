@@ -436,11 +436,10 @@ const InventoryTable = () => {
         <button
           onClick={handleRegisterSale}
           disabled={selectedProducts.length === 0}
-          className={`px-6 py-2 bg-blue-600 text-white rounded-lg ${
-            selectedProducts.length === 0
+          className={`px-6 py-2 bg-blue-600 text-white rounded-lg ${selectedProducts.length === 0
               ? "opacity-50 cursor-not-allowed"
               : "hover:bg-blue-700"
-          }`}
+            }`}
         >
           Registrar Venta
         </button>
@@ -466,7 +465,7 @@ const InventoryTable = () => {
               <TableCell>Precio Original</TableCell>
               <TableCell>Precio Venta</TableCell>
               <TableCell>Cantidad</TableCell>
-              <TableCell>Acción</TableCell>
+              <TableCell align="center">Acciones</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -474,10 +473,10 @@ const InventoryTable = () => {
               <TableRow key={product._id}>
                 <TableCell
                   sx={{
-                    cursor: "pointer", // Hace que toda la celda sea interactiva
-                    padding: 0, // Opcional: Ajusta el padding de la celda si es necesario
+                    cursor: "pointer",
+                    padding: 0,
                   }}
-                  onClick={() => handleSelectProduct(product._id)} // Permite seleccionar al hacer clic en la celda
+                  onClick={() => handleSelectProduct(product._id)}
                 >
                   <Box
                     display="flex"
@@ -488,7 +487,7 @@ const InventoryTable = () => {
                   >
                     <Checkbox
                       checked={selectedProducts.includes(product._id)}
-                      onChange={(e) => e.stopPropagation()} // Evita conflictos si también haces clic en la celda
+                      onChange={(e) => e.stopPropagation()}
                     />
                   </Box>
                 </TableCell>
@@ -501,20 +500,41 @@ const InventoryTable = () => {
                 <TableCell>${(product.price * 1.3).toFixed(2)}</TableCell>
                 <TableCell>{product.stock}</TableCell>
                 <TableCell>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    onClick={() => handleEdit(product._id)}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      gap: 1,
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
                   >
-                    Editar
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="secondary"
-                    onClick={() => handleDelete(product._id)}
-                  >
-                    Eliminar
-                  </Button>
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      size="small"
+                      onClick={() => handleEdit(product._id)}
+                      sx={{
+                        minWidth: "auto",
+                        padding: "4px 8px",
+                        fontSize: "0.75rem",
+                      }}
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      onClick={() => handleDelete(product._id)}
+                      sx={{
+                        minWidth: "auto",
+                        padding: "4px 8px",
+                        fontSize: "0.75rem",
+                      }}
+                    >
+                      Eliminar
+                    </Button>
+                  </Box>
                 </TableCell>
               </TableRow>
             ))}
@@ -595,7 +615,7 @@ const InventoryTable = () => {
             <Button
               variant="contained"
               color="primary"
-              onClick={handleRegisterSaleSubmit} // Llama a la función que registra la venta
+              onClick={handleRegisterSaleSubmit}
             >
               Confirmar Venta
             </Button>
@@ -690,6 +710,7 @@ const InventoryTable = () => {
           )}
         </Box>
       </Modal>
+
       {/* Modal para agregar producto */}
       <Modal open={addProductModalOpen} onClose={closeAddProductModal}>
         <Box
@@ -732,7 +753,7 @@ const InventoryTable = () => {
             />
             <TextField
               label="Tamaño"
-              name="size"
+              name="sizeProduct"
               variant="outlined"
               fullWidth
               value={newProduct.sizeProduct}

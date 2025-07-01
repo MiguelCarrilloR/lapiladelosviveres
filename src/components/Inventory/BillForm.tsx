@@ -20,7 +20,7 @@ interface Bill {
 
 const BillForm = () => {
   const [isOpen, setIsOpen] = useState(false);
-  
+
   const [newBill, setNewBill] = useState<Bill>({
     purchaseDate: new Date().toISOString().split('T')[0],
     description: "",
@@ -43,13 +43,13 @@ const BillForm = () => {
     if (currentProduct.name && currentProduct.price > 0 && currentProduct.quantity > 0) {
       const updatedProducts = [...newBill.products, currentProduct];
       const totalAmount = calculateTotalAmount(updatedProducts);
-      
+
       setNewBill(prev => ({
         ...prev,
         products: updatedProducts,
         totalAmount
       }));
-      
+
       // Reset current product
       setCurrentProduct({
         name: "",
@@ -62,7 +62,7 @@ const BillForm = () => {
   const removeProductFromBill = (index: number) => {
     const updatedProducts = newBill.products.filter((_, i) => i !== index);
     const totalAmount = calculateTotalAmount(updatedProducts);
-    
+
     setNewBill(prev => ({
       ...prev,
       products: updatedProducts,
@@ -71,42 +71,42 @@ const BillForm = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  if (newBill.products.length === 0) {
-    alert("Debe agregar al menos un producto a la factura");
-    return;
-  }
+    e.preventDefault();
 
-  try {
-    // Enviar la factura a la API con axios
-    const response = await axios.post('https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/bills/create', newBill);
-    
-    console.log('Factura guardada exitosamente:', response.data);
-    
-    // Mostrar mensaje de éxito
-    alert('Factura guardada exitosamente');
-    
-    // Reset form
-    setNewBill({
-      purchaseDate: new Date().toISOString().split('T')[0],
-      description: "",
-      supplier: "",
-      products: [],
-      totalAmount: 0,
-    });
-    setCurrentProduct({
-      name: "",
-      price: 0,
-      quantity: 0,
-    });
-    setIsOpen(false);
-    
-  } catch (error) {
-    console.error('Error al guardar la factura:', error);
-    alert('Error al guardar la factura. Por favor intente nuevamente.');
-  }
-};
+    if (newBill.products.length === 0) {
+      alert("Debe agregar al menos un producto a la factura");
+      return;
+    }
+
+    try {
+      // Enviar la factura a la API con axios
+      const response = await axios.post('https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/bills/create', newBill);
+
+      console.log('Factura guardada exitosamente:', response.data);
+
+      // Mostrar mensaje de éxito
+      alert('Factura guardada exitosamente');
+
+      // Reset form
+      setNewBill({
+        purchaseDate: new Date().toISOString().split('T')[0],
+        description: "",
+        supplier: "",
+        products: [],
+        totalAmount: 0,
+      });
+      setCurrentProduct({
+        name: "",
+        price: 0,
+        quantity: 0,
+      });
+      setIsOpen(false);
+
+    } catch (error) {
+      console.error('Error al guardar la factura:', error);
+      alert('Error al guardar la factura. Por favor intente nuevamente.');
+    }
+  };
 
   if (!isOpen) {
     return (
@@ -186,7 +186,7 @@ const BillForm = () => {
         {/* Agregar producto */}
         <div className="border rounded-lg p-4 bg-gray-50">
           <h3 className="text-lg font-semibold mb-3">Agregar Producto</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">
@@ -209,13 +209,17 @@ const BillForm = () => {
               <input
                 type="number"
                 min="0"
-                step="0.01"
                 className="mt-1 w-full p-2 border rounded"
-                value={currentProduct.price}
-                onChange={(e) =>
-                  setCurrentProduct({ ...currentProduct, price: Number(e.target.value) })
-                }
+                value={currentProduct.price === 0 ? "" : currentProduct.price}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setCurrentProduct({
+                    ...currentProduct,
+                    price: val === "" ? 0 : Number(val),
+                  });
+                }}
               />
+
             </div>
 
             <div>
@@ -224,11 +228,16 @@ const BillForm = () => {
               </label>
               <input
                 type="number"
+                min="0"
                 className="mt-1 w-full p-2 border rounded"
-                value={currentProduct.quantity}
-                onChange={(e) =>
-                  setCurrentProduct({ ...currentProduct, quantity: Number(e.target.value) })
-                }
+                value={currentProduct.quantity === 0 ? "" : currentProduct.quantity}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setCurrentProduct({
+                    ...currentProduct,
+                    quantity: val === "" ? 0 : Number(val),
+                  });
+                }}
               />
             </div>
           </div>
@@ -246,7 +255,7 @@ const BillForm = () => {
         {newBill.products.length > 0 && (
           <div className="border rounded-lg p-4">
             <h3 className="text-lg font-semibold mb-3">Productos en la Factura</h3>
-            
+
             <div className="space-y-2 max-h-60 overflow-y-auto">
               {newBill.products.map((product, index) => (
                 <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded">

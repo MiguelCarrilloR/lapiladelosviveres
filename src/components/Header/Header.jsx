@@ -164,6 +164,18 @@ const Header = () => {
                 <ClipboardList className="w-4 h-4" />
                 <span>Inventario</span>
               </Link>
+              <Link
+                to="/facturacion"
+                onClick={closeMobileMenu}
+                className={`flex items-center space-x-3 px-4 py-3 text-sm font-medium transition-all duration-300 rounded-lg relative z-50 ${
+                  isActive("/facturacion")
+                    ? "text-white bg-white/10 backdrop-blur-sm shadow-lg border border-white/20"
+                    : "text-gray-300 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <ClipboardList className="w-4 h-4" />
+                <span>Facturación</span>
+              </Link>
 
               {/* Separador */}
               <div className="h-px bg-white/10 my-3"></div>

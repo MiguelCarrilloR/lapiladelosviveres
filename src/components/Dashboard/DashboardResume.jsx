@@ -23,7 +23,9 @@ import {
   Calendar,
   Filter,
   Eye,
-  BarChart3
+  BarChart3,
+  Menu,
+  X
 } from "lucide-react";
 import axios from "axios";
 
@@ -35,6 +37,7 @@ function DashboardResume() {
   const [salesData, setSalesData] = useState([]);
   const [billsData, setBillsData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Estados para filtros
   const [selectedFilter, setSelectedFilter] = useState('all'); // all, today, month, year
@@ -189,6 +192,32 @@ function DashboardResume() {
 
   const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088fe'];
 
+  const navigationButtons = [
+    {
+      key: 'dashboard',
+      icon: BarChart3,
+      label: 'Dashboard',
+      shortLabel: 'Panel'
+    },
+    {
+      key: 'balance',
+      icon: Eye,
+      label: 'Balance',
+      shortLabel: 'Balance'
+    },
+    {
+      key: 'pyg',
+      icon: TrendingUp,
+      label: 'P&G',
+      shortLabel: 'P&G'
+    }
+  ];
+
+  const handleViewChange = (view) => {
+    setActiveView(view);
+    setIsMobileMenuOpen(false);
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-screen bg-gray-100 items-center justify-center">
@@ -204,88 +233,121 @@ function DashboardResume() {
     <div className="flex h-screen bg-gray-100">
       <div className="flex-1 flex flex-col overflow-hidden">
         <main className="flex-1 overflow-y-auto">
-          <div className="container mx-auto px-6 py-8">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-8">
-              <h1 className="text-3xl font-bold text-gray-900">
+          <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-8">
+            {/* Header with improved responsive navigation */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-0">
                 {activeView === 'dashboard' && 'Panel de Control'}
                 {activeView === 'balance' && 'Balance General'}
                 {activeView === 'pyg' && 'Estado de Pérdidas y Ganancias'}
               </h1>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setActiveView('dashboard')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    activeView === 'dashboard' 
-                      ? 'bg-indigo-600 text-white' 
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <BarChart3 className="w-4 h-4 mr-2 inline" />
-                  Dashboard
-                </button>
-                <button
-                  onClick={() => setActiveView('balance')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    activeView === 'balance' 
-                      ? 'bg-indigo-600 text-white' 
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <Eye className="w-4 h-4 mr-2 inline" />
-                  Balance
-                </button>
-                <button
-                  onClick={() => setActiveView('pyg')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    activeView === 'pyg' 
-                      ? 'bg-indigo-600 text-white' 
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <TrendingUp className="w-4 h-4 mr-2 inline" />
-                  P&G
-                </button>
+              
+              {/* Desktop Navigation */}
+              <div className="hidden sm:flex space-x-2">
+                {navigationButtons.map(({ key, icon: Icon, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => handleViewChange(key)}
+                    className={`px-3 lg:px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                      activeView === key 
+                        ? 'bg-indigo-600 text-white shadow-md' 
+                        : 'bg-white text-gray-700 hover:bg-gray-50 hover:shadow-sm'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 mr-1 lg:mr-2 inline" />
+                    <span className="hidden lg:inline">{label}</span>
+                    <span className="lg:hidden">{label}</span>
+                  </button>
+                ))}
                 <button
                   onClick={() => navigate("/inventario")}
-                  className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-md transition-colors"
+                  className="px-3 lg:px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-md transition-all duration-200 hover:shadow-md"
                 >
-                  <Package className="w-4 h-4 mr-2 inline" />
-                  Inventario
+                  <Package className="w-4 h-4 mr-1 lg:mr-2 inline" />
+                  <span className="hidden lg:inline">Inventario</span>
+                  <span className="lg:hidden">Inventario</span>
+                </button>
+              </div>
+
+              {/* Mobile Navigation Toggle */}
+              <div className="sm:hidden">
+                <button
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                >
+                  {isMobileMenuOpen ? (
+                    <X className="w-6 h-6" />
+                  ) : (
+                    <Menu className="w-6 h-6" />
+                  )}
                 </button>
               </div>
             </div>
 
-            {/* Filtros */}
+            {/* Mobile Navigation Menu */}
+            {isMobileMenuOpen && (
+              <div className="sm:hidden mb-6 bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+                <div className="p-2 space-y-1">
+                  {navigationButtons.map(({ key, icon: Icon, label }) => (
+                    <button
+                      key={key}
+                      onClick={() => handleViewChange(key)}
+                      className={`w-full flex items-center px-3 py-3 rounded-md text-sm font-medium transition-all duration-200 ${
+                        activeView === key 
+                          ? 'bg-indigo-600 text-white' 
+                          : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5 mr-3" />
+                      {label}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => {
+                      navigate("/inventario");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full flex items-center px-3 py-3 rounded-md text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 transition-all duration-200"
+                  >
+                    <Package className="w-5 h-5 mr-3" />
+                    Inventario
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Filtros with improved responsive design */}
             <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-              <div className="flex items-center space-x-4">
-                <Filter className="w-5 h-5 text-gray-500" />
-                <select
-                  value={selectedFilter}
-                  onChange={(e) => setSelectedFilter(e.target.value)}
-                  className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="all">Todos los períodos</option>
-                  <option value="today">Hoy</option>
-                  <option value="month">Este mes</option>
-                  <option value="year">Este año</option>
-                  <option value="custom">Rango personalizado</option>
-                </select>
+              <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+                <div className="flex items-center space-x-2">
+                  <Filter className="w-5 h-5 text-gray-500" />
+                  <select
+                    value={selectedFilter}
+                    onChange={(e) => setSelectedFilter(e.target.value)}
+                    className="flex-1 sm:flex-none border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="all">Todos los períodos</option>
+                    <option value="today">Hoy</option>
+                    <option value="month">Este mes</option>
+                    <option value="year">Este año</option>
+                    <option value="custom">Rango personalizado</option>
+                  </select>
+                </div>
                 
                 {selectedFilter === 'custom' && (
-                  <div className="flex items-center space-x-2">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
                     <input
                       type="date"
                       value={customDateRange.startDate}
                       onChange={(e) => setCustomDateRange({...customDateRange, startDate: e.target.value})}
-                      className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full sm:w-auto border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
-                    <span className="text-gray-500">hasta</span>
+                    <span className="text-gray-500 text-sm">hasta</span>
                     <input
                       type="date"
                       value={customDateRange.endDate}
                       onChange={(e) => setCustomDateRange({...customDateRange, endDate: e.target.value})}
-                      className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full sm:w-auto border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
                 )}
@@ -295,45 +357,45 @@ function DashboardResume() {
             {/* Dashboard View */}
             {activeView === 'dashboard' && (
               <>
-                {/* Cards de resumen */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                  <div className="bg-white rounded-lg shadow-md p-6">
+                {/* Cards de resumen with improved responsive grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                  <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-sm font-medium text-gray-600">Productos</h3>
                       <Package className="w-4 h-4 text-gray-500" />
                     </div>
-                    <div className="text-2xl font-bold text-gray-900">{totalProducts}</div>
+                    <div className="text-xl sm:text-2xl font-bold text-gray-900">{totalProducts}</div>
                     <p className="text-xs text-gray-500 mt-1">en inventario</p>
                   </div>
 
-                  <div className="bg-white rounded-lg shadow-md p-6">
+                  <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-sm font-medium text-gray-600">Ingresos</h3>
                       <DollarSign className="w-4 h-4 text-green-500" />
                     </div>
-                    <div className="text-2xl font-bold text-green-600">
+                    <div className="text-xl sm:text-2xl font-bold text-green-600">
                       ${financialData.totalRevenue.toLocaleString("es-ES")}
                     </div>
                     <p className="text-xs text-gray-500 mt-1">ventas totales</p>
                   </div>
 
-                  <div className="bg-white rounded-lg shadow-md p-6">
+                  <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-sm font-medium text-gray-600">Gastos</h3>
                       <TrendingDown className="w-4 h-4 text-red-500" />
                     </div>
-                    <div className="text-2xl font-bold text-red-600">
+                    <div className="text-xl sm:text-2xl font-bold text-red-600">
                       ${financialData.totalExpenses.toLocaleString("es-ES")}
                     </div>
                     <p className="text-xs text-gray-500 mt-1">gastos totales</p>
                   </div>
 
-                  <div className="bg-white rounded-lg shadow-md p-6">
+                  <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-sm font-medium text-gray-600">Utilidad Neta</h3>
                       <TrendingUp className="w-4 h-4 text-blue-500" />
                     </div>
-                    <div className={`text-2xl font-bold ${financialData.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <div className={`text-xl sm:text-2xl font-bold ${financialData.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       ${financialData.netProfit.toLocaleString("es-ES")}
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
@@ -343,14 +405,14 @@ function DashboardResume() {
                 </div>
 
                 {/* Gráfico de tendencias */}
-                <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+                <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6 sm:mb-8">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Análisis Financiero Diario</h3>
-                  <div className="h-[400px] w-full">
+                  <div className="h-[300px] sm:h-[400px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={financialData.dailyData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                        <XAxis dataKey="date" stroke="#6b7280" fontSize={12} tickLine={false} />
-                        <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} 
+                        <XAxis dataKey="date" stroke="#6b7280" fontSize={10} tickLine={false} />
+                        <YAxis stroke="#6b7280" fontSize={10} tickLine={false} axisLine={false} 
                                tickFormatter={(value) => `$${value.toLocaleString()}`} />
                         <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, '']} />
                         <Legend />
@@ -366,39 +428,39 @@ function DashboardResume() {
 
             {/* Balance General */}
             {activeView === 'balance' && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+                <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Activos</h3>
                   <div className="space-y-3">
                     <div className="flex justify-between py-2 border-b">
-                      <span className="text-gray-600">Efectivo (Ingresos)</span>
-                      <span className="font-semibold">${financialData.totalRevenue.toLocaleString("es-ES")}</span>
+                      <span className="text-gray-600 text-sm sm:text-base">Efectivo (Ingresos)</span>
+                      <span className="font-semibold text-sm sm:text-base">${financialData.totalRevenue.toLocaleString("es-ES")}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b">
-                      <span className="text-gray-600">Inventario</span>
-                      <span className="font-semibold">{totalProducts} productos</span>
+                      <span className="text-gray-600 text-sm sm:text-base">Inventario</span>
+                      <span className="font-semibold text-sm sm:text-base">{totalProducts} productos</span>
                     </div>
-                    <div className="flex justify-between py-2 font-bold text-lg border-t-2">
+                    <div className="flex justify-between py-2 font-bold text-base sm:text-lg border-t-2">
                       <span>Total Activos</span>
                       <span>${financialData.totalRevenue.toLocaleString("es-ES")}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Pasivos y Patrimonio</h3>
                   <div className="space-y-3">
                     <div className="flex justify-between py-2 border-b">
-                      <span className="text-gray-600">Gastos Operativos</span>
-                      <span className="font-semibold text-red-600">${financialData.totalExpenses.toLocaleString("es-ES")}</span>
+                      <span className="text-gray-600 text-sm sm:text-base">Gastos Operativos</span>
+                      <span className="font-semibold text-red-600 text-sm sm:text-base">${financialData.totalExpenses.toLocaleString("es-ES")}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b">
-                      <span className="text-gray-600">Patrimonio Neto</span>
-                      <span className={`font-semibold ${financialData.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <span className="text-gray-600 text-sm sm:text-base">Patrimonio Neto</span>
+                      <span className={`font-semibold text-sm sm:text-base ${financialData.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         ${financialData.netProfit.toLocaleString("es-ES")}
                       </span>
                     </div>
-                    <div className="flex justify-between py-2 font-bold text-lg border-t-2">
+                    <div className="flex justify-between py-2 font-bold text-base sm:text-lg border-t-2">
                       <span>Total Pasivos + Patrimonio</span>
                       <span>${financialData.totalRevenue.toLocaleString("es-ES")}</span>
                     </div>
@@ -407,9 +469,9 @@ function DashboardResume() {
 
                 {/* Gráfico de gastos por proveedor */}
                 {financialData.expensesByCategory.length > 0 && (
-                  <div className="lg:col-span-2 bg-white rounded-lg shadow-md p-6">
+                  <div className="lg:col-span-2 bg-white rounded-lg shadow-md p-4 sm:p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Gastos por Proveedor</h3>
-                    <div className="h-[300px] w-full">
+                    <div className="h-[250px] sm:h-[300px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
@@ -437,47 +499,47 @@ function DashboardResume() {
 
             {/* Estado de Pérdidas y Ganancias */}
             {activeView === 'pyg' && (
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-6">Estado de Resultados</h3>
                 <div className="space-y-4">
                   <div className="flex justify-between py-3 border-b">
-                    <span className="text-lg font-medium text-gray-700">Ingresos por Ventas</span>
-                    <span className="text-lg font-bold text-green-600">
+                    <span className="text-base sm:text-lg font-medium text-gray-700">Ingresos por Ventas</span>
+                    <span className="text-base sm:text-lg font-bold text-green-600">
                       ${financialData.totalRevenue.toLocaleString("es-ES")}
                     </span>
                   </div>
                   
                   <div className="flex justify-between py-3 border-b">
-                    <span className="text-lg font-medium text-gray-700">(-) Costos y Gastos Operativos</span>
-                    <span className="text-lg font-bold text-red-600">
+                    <span className="text-base sm:text-lg font-medium text-gray-700">(-) Costos y Gastos Operativos</span>
+                    <span className="text-base sm:text-lg font-bold text-red-600">
                       ${financialData.totalExpenses.toLocaleString("es-ES")}
                     </span>
                   </div>
                   
                   <div className="flex justify-between py-3 border-t-2 border-gray-300">
-                    <span className="text-xl font-bold text-gray-900">Utilidad Neta</span>
-                    <span className={`text-xl font-bold ${financialData.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <span className="text-lg sm:text-xl font-bold text-gray-900">Utilidad Neta</span>
+                    <span className={`text-lg sm:text-xl font-bold ${financialData.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       ${financialData.netProfit.toLocaleString("es-ES")}
                     </span>
                   </div>
                   
                   <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                     <h4 className="font-semibold text-gray-700 mb-2">Indicadores Financieros</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-blue-600">
+                        <div className="text-xl sm:text-2xl font-bold text-blue-600">
                           {financialData.profitMargin.toFixed(1)}%
                         </div>
                         <div className="text-sm text-gray-600">Margen de Utilidad</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-purple-600">
+                        <div className="text-xl sm:text-2xl font-bold text-purple-600">
                           {financialData.totalRevenue > 0 ? ((financialData.totalExpenses / financialData.totalRevenue) * 100).toFixed(1) : 0}%
                         </div>
                         <div className="text-sm text-gray-600">Ratio de Gastos</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-indigo-600">
+                        <div className="text-xl sm:text-2xl font-bold text-indigo-600">
                           {salesData.length + billsData.length}
                         </div>
                         <div className="text-sm text-gray-600">Total Transacciones</div>
@@ -489,12 +551,12 @@ function DashboardResume() {
                 {/* Gráfico comparativo */}
                 <div className="mt-8">
                   <h4 className="text-lg font-semibold text-gray-900 mb-4">Comparativo Ingresos vs Gastos</h4>
-                  <div className="h-[300px] w-full">
+                  <div className="h-[250px] sm:h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={financialData.dailyData}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis tickFormatter={(value) => `$${value.toLocaleString()}`} />
+                        <XAxis dataKey="date" fontSize={10} />
+                        <YAxis tickFormatter={(value) => `$${value.toLocaleString()}`} fontSize={10} />
                         <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
                         <Legend />
                         <Bar dataKey="ingresos" fill="#10b981" name="Ingresos" />
