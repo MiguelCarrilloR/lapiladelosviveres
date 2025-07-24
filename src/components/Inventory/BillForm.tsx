@@ -204,7 +204,7 @@ const BillForm = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Precio Unitario
+                Precio 
               </label>
               <input
                 type="number"

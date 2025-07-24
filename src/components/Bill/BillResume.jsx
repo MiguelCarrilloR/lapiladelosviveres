@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, Edit2, Trash2, ShoppingCart } from 'lucide-react';
+import { Search, Eye, Edit2, Trash2, ShoppingCart, Save, X } from 'lucide-react';
 
 import axios from 'axios';
 import BillForm from '../Inventory/BillForm';
@@ -11,6 +11,13 @@ const BillResume = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBill, setSelectedBill] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [editingBill, setEditingBill] = useState(null);
+  const [editForm, setEditForm] = useState({
+    description: '',
+    supplier: '',
+    purchaseDate: '',
+    products: []
+  });
 
   useEffect(() => {
     fetchBills();
@@ -59,6 +66,79 @@ const BillResume = () => {
     setShowModal(true);
   };
 
+  const editBill = (bill) => {
+    setEditingBill(bill._id);
+    setEditForm({
+      description: bill.description,
+      supplier: bill.supplier,
+      purchaseDate: bill.purchaseDate.split('T')[0], // Formato YYYY-MM-DD para input date
+      products: bill.products.map(product => ({ ...product })) // Copia profunda
+    });
+  };
+
+  const saveEdit = async () => {
+    try {
+      setLoading(true);
+      
+      // Calcular el total basado en los productos editados
+      const totalAmount = editForm.products.reduce((sum, product) => 
+        sum + (product.price * product.quantity), 0
+      );
+
+      const updatedBill = {
+        ...editForm,
+        totalAmount
+      };
+
+      await axios.put(`http://localhost:5000/api/bills/${editingBill}`, updatedBill);
+      
+      // Actualizar el estado local
+      setBills(bills.map(bill => 
+        bill._id === editingBill 
+          ? { ...bill, ...updatedBill, _id: bill._id }
+          : bill
+      ));
+      
+      cancelEdit();
+    } catch (error) {
+      console.error('Error al actualizar:', error);
+      alert('Error al actualizar la factura');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingBill(null);
+    setEditForm({
+      description: '',
+      supplier: '',
+      purchaseDate: '',
+      products: []
+    });
+  };
+
+  const updateProduct = (index, field, value) => {
+    const updatedProducts = [...editForm.products];
+    updatedProducts[index] = {
+      ...updatedProducts[index],
+      [field]: field === 'price' || field === 'quantity' ? parseFloat(value) || 0 : value
+    };
+    setEditForm({ ...editForm, products: updatedProducts });
+  };
+
+  const removeProduct = (index) => {
+    const updatedProducts = editForm.products.filter((_, i) => i !== index);
+    setEditForm({ ...editForm, products: updatedProducts });
+  };
+
+  const addProduct = () => {
+    setEditForm({
+      ...editForm,
+      products: [...editForm.products, { name: '', price: 0, quantity: 1 }]
+    });
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('es-ES');
   };
@@ -68,6 +148,12 @@ const BillResume = () => {
       style: 'currency',
       currency: 'COP'
     }).format(amount);
+  };
+
+  const calculateTotal = () => {
+    return editForm.products.reduce((sum, product) => 
+      sum + (product.price * product.quantity), 0
+    );
   };
 
   return (
@@ -112,39 +198,101 @@ const BillResume = () => {
                   {filteredBills.map((bill) => (
                     <tr key={bill._id} className="hover:bg-gray-50">
                       <td className="px-4 py-4 text-sm text-gray-900 whitespace-nowrap">
-                        {formatDate(bill.purchaseDate)}
+                        {editingBill === bill._id ? (
+                          <input
+                            type="date"
+                            value={editForm.purchaseDate}
+                            onChange={(e) => setEditForm({ ...editForm, purchaseDate: e.target.value })}
+                            className="text-sm border border-gray-300 rounded px-2 py-1"
+                          />
+                        ) : (
+                          formatDate(bill.purchaseDate)
+                        )}
                       </td>
-                      <td className="px-4 py-4 text-sm text-gray-900 max-w-[200px] truncate" title={bill.description}>
-                        {bill.description}
+                      <td className="px-4 py-4 text-sm text-gray-900 max-w-[200px]">
+                        {editingBill === bill._id ? (
+                          <input
+                            type="text"
+                            value={editForm.description}
+                            onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                            className="w-full text-sm border border-gray-300 rounded px-2 py-1"
+                          />
+                        ) : (
+                          <span className="truncate block" title={bill.description}>
+                            {bill.description}
+                          </span>
+                        )}
                       </td>
-                      <td className="px-4 py-4 text-sm text-gray-600 max-w-[150px] truncate" title={bill.supplier}>
-                        {bill.supplier}
+                      <td className="px-4 py-4 text-sm text-gray-600 max-w-[150px]">
+                        {editingBill === bill._id ? (
+                          <input
+                            type="text"
+                            value={editForm.supplier}
+                            onChange={(e) => setEditForm({ ...editForm, supplier: e.target.value })}
+                            className="w-full text-sm border border-gray-300 rounded px-2 py-1"
+                          />
+                        ) : (
+                          <span className="truncate block" title={bill.supplier}>
+                            {bill.supplier}
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">
                         <div className="flex items-center gap-1">
                           <ShoppingCart className="w-4 h-4" />
-                          {bill.products.length}
+                          {editingBill === bill._id ? editForm.products.length : bill.products.length}
                         </div>
                       </td>
                       <td className="px-4 py-4 text-sm font-semibold text-green-600 whitespace-nowrap">
-                        {formatCurrency(bill.totalAmount)}
+                        {editingBill === bill._id 
+                          ? formatCurrency(calculateTotal())
+                          : formatCurrency(bill.totalAmount)
+                        }
                       </td>
                       <td className="px-4 py-4 text-center whitespace-nowrap">
                         <div className="flex justify-center gap-1">
-                          <button
-                            onClick={() => viewBill(bill)}
-                            className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg"
-                            title="Ver"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => deleteBill(bill._id)}
-                            className="p-2 text-red-600 hover:bg-red-100 rounded-lg"
-                            title="Eliminar"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {editingBill === bill._id ? (
+                            <>
+                              <button
+                                onClick={saveEdit}
+                                className="p-2 text-green-600 hover:bg-green-100 rounded-lg"
+                                title="Guardar"
+                              >
+                                <Save className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={cancelEdit}
+                                className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                                title="Cancelar"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => viewBill(bill)}
+                                className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg"
+                                title="Ver"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => editBill(bill)}
+                                className="p-2 text-yellow-600 hover:bg-yellow-100 rounded-lg"
+                                title="Editar"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => deleteBill(bill._id)}
+                                className="p-2 text-red-600 hover:bg-red-100 rounded-lg"
+                                title="Eliminar"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -186,6 +334,13 @@ const BillResume = () => {
                       title="Ver"
                     >
                       <Eye className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => editBill(bill)}
+                      className="p-2 text-yellow-600 hover:bg-yellow-100 rounded-lg"
+                      title="Editar"
+                    >
+                      <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => deleteBill(bill._id)}
@@ -295,6 +450,121 @@ const BillResume = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de edición de productos */}
+      {editingBill && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Editar Productos</h2>
+                <button
+                  onClick={cancelEdit}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Producto</th>
+                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Precio</th>
+                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Cantidad</th>
+                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Subtotal</th>
+                        <th className="px-4 py-2 text-center text-sm font-medium text-gray-700">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {editForm.products.map((product, index) => (
+                        <tr key={index}>
+                          <td className="px-4 py-2">
+                            <input
+                              type="text"
+                              value={product.name}
+                              onChange={(e) => updateProduct(index, 'name', e.target.value)}
+                              className="w-full text-sm border border-gray-300 rounded px-2 py-1"
+                              placeholder="Nombre del producto"
+                            />
+                          </td>
+                          <td className="px-4 py-2">
+                            <input
+                              type="number"
+                              value={product.price}
+                              onChange={(e) => updateProduct(index, 'price', e.target.value)}
+                              className="w-full text-sm border border-gray-300 rounded px-2 py-1"
+                              placeholder="0"
+                              min="0"
+                              step="0.01"
+                            />
+                          </td>
+                          <td className="px-4 py-2">
+                            <input
+                              type="number"
+                              value={product.quantity}
+                              onChange={(e) => updateProduct(index, 'quantity', e.target.value)}
+                              className="w-full text-sm border border-gray-300 rounded px-2 py-1"
+                              placeholder="1"
+                              min="1"
+                            />
+                          </td>
+                          <td className="px-4 py-2 text-sm font-medium">
+                            {formatCurrency(product.price * product.quantity)}
+                          </td>
+                          <td className="px-4 py-2 text-center">
+                            <button
+                              onClick={() => removeProduct(index)}
+                              className="p-1 text-red-600 hover:bg-red-100 rounded"
+                              title="Eliminar producto"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <button
+                    onClick={addProduct}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Agregar Producto
+                  </button>
+                  
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <span className="text-sm font-medium text-gray-700">Total: </span>
+                    <span className="text-xl font-bold text-blue-600">
+                      {formatCurrency(calculateTotal())}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                  <button
+                    onClick={cancelEdit}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={saveEdit}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  >
+                    Guardar Cambios
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <BillForm />
     </div>
   );
