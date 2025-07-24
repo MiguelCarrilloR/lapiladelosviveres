@@ -27,7 +27,7 @@ const BillResume = () => {
     const filtered = bills.filter(bill =>
       bill.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       bill.supplier?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      bill.products?.some(product => 
+      bill.products?.some(product =>
         product.name?.toLowerCase().includes(searchTerm.toLowerCase())
       )
     );
@@ -79,26 +79,32 @@ const BillResume = () => {
   const saveEdit = async () => {
     try {
       setLoading(true);
-      
-      // Calcular el total basado en los productos editados
-      const totalAmount = editForm.products.reduce((sum, product) => 
+
+      // Validación y conversión
+      const normalizedProducts = editForm.products.map(product => ({
+        ...product,
+        price: parseFloat(product.price) || 0,
+        quantity: parseFloat(product.quantity) || 0,
+      }));
+
+      const totalAmount = normalizedProducts.reduce((sum, product) =>
         sum + (product.price * product.quantity), 0
       );
 
       const updatedBill = {
         ...editForm,
+        products: normalizedProducts,
         totalAmount
       };
 
-      await axios.put(`http://localhost:5000/api/bills/${editingBill}`, updatedBill);
-      
-      // Actualizar el estado local
-      setBills(bills.map(bill => 
-        bill._id === editingBill 
+      await axios.put(`https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/bills/${editingBill}`, updatedBill);
+
+      setBills(bills.map(bill =>
+        bill._id === editingBill
           ? { ...bill, ...updatedBill, _id: bill._id }
           : bill
       ));
-      
+
       cancelEdit();
     } catch (error) {
       console.error('Error al actualizar:', error);
@@ -122,10 +128,11 @@ const BillResume = () => {
     const updatedProducts = [...editForm.products];
     updatedProducts[index] = {
       ...updatedProducts[index],
-      [field]: field === 'price' || field === 'quantity' ? parseFloat(value) || 0 : value
+      [field]: field === 'price' || field === 'quantity' ? value : value
     };
     setEditForm({ ...editForm, products: updatedProducts });
   };
+
 
   const removeProduct = (index) => {
     const updatedProducts = editForm.products.filter((_, i) => i !== index);
@@ -151,7 +158,7 @@ const BillResume = () => {
   };
 
   const calculateTotal = () => {
-    return editForm.products.reduce((sum, product) => 
+    return editForm.products.reduce((sum, product) =>
       sum + (product.price * product.quantity), 0
     );
   };
@@ -244,7 +251,7 @@ const BillResume = () => {
                         </div>
                       </td>
                       <td className="px-4 py-4 text-sm font-semibold text-green-600 whitespace-nowrap">
-                        {editingBill === bill._id 
+                        {editingBill === bill._id
                           ? formatCurrency(calculateTotal())
                           : formatCurrency(bill.totalAmount)
                         }
@@ -299,7 +306,7 @@ const BillResume = () => {
                   ))}
                 </tbody>
               </table>
-              
+
               {filteredBills.length === 0 && !loading && (
                 <div className="text-center py-12">
                   <p className="text-gray-500">No se encontraron facturas</p>
@@ -351,7 +358,7 @@ const BillResume = () => {
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Proveedor:</span>
@@ -403,7 +410,7 @@ const BillResume = () => {
                     <p className="text-gray-900">{selectedBill.supplier}</p>
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Descripción</label>
                   <p className="text-gray-900">{selectedBill.description}</p>
@@ -536,7 +543,7 @@ const BillResume = () => {
                   >
                     Agregar Producto
                   </button>
-                  
+
                   <div className="bg-blue-50 p-3 rounded-lg">
                     <span className="text-sm font-medium text-gray-700">Total: </span>
                     <span className="text-xl font-bold text-blue-600">
