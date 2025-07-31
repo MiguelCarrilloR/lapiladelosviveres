@@ -12,7 +12,7 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await fetch('https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/products/products');
+      const response = await fetch('https://tienda-391674601129.us-central1.run.app/api/products/products');
       const data = await response.json();
       setProducts(data);
     } catch (err) {
@@ -24,7 +24,7 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
 
   const addProduct = async (product: Omit<Product, '_id'>) => {
     try {
-      const response = await fetch('https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/products/products', {
+      const response = await fetch('https://tienda-391674601129.us-central1.run.app/api/products/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(product),
@@ -38,7 +38,7 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
 
   const updateProduct = async (id: string, product: Partial<Product>) => {
     try {
-      const response = await fetch(`https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/products/products/${id}`, {
+      const response = await fetch(`https://tienda-391674601129.us-central1.run.app/api/products/products/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(product),
@@ -54,7 +54,7 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
 
   const deleteProduct = async (id: string) => {
     try {
-      await fetch(`https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/products/products/${id}`, {
+      await fetch(`https://tienda-391674601129.us-central1.run.app/api/products/products/${id}`, {
         method: 'DELETE',
       });
       setProducts(prev => prev.filter(p => p._id !== id));

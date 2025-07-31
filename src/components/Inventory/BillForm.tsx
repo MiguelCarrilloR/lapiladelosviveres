@@ -80,7 +80,7 @@ const BillForm = () => {
 
     try {
       // Enviar la factura a la API con axios
-      const response = await axios.post('https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/bills/create', newBill);
+      const response = await axios.post('https://tienda-391674601129.us-central1.run.app/api/bills/create', newBill);
 
       console.log('Factura guardada exitosamente:', response.data);
 

@@ -25,7 +25,7 @@ export const SaleProvider = ({ children }: { children: React.ReactNode }) => {
   const addSale = async (sale: Omit<Sale, "_id" | "date">) => {
     try {
       // Registrar la venta
-      const response = await fetch("https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/sales/register", {
+      const response = await fetch("https://tienda-391674601129.us-central1.run.app/api/sales/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(sale),
@@ -34,7 +34,7 @@ export const SaleProvider = ({ children }: { children: React.ReactNode }) => {
       setSales((prev) => [...prev, newSale]);
 
       // Actualizar el stock de los productos
-      await fetch("https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/products/update-stock", {
+      await fetch("https://tienda-391674601129.us-central1.run.app/api/products/update-stock", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ products: sale.products }),

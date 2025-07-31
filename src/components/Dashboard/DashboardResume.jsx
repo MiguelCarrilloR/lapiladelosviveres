@@ -159,18 +159,18 @@ function DashboardResume() {
         
         // Obtener productos
         const productsResponse = await axios.get(
-          "https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/products/total"
+          "https://tienda-391674601129.us-central1.run.app/api/products/total"
         );
         setTotalProducts(productsResponse.data.total);
 
         // Obtener ventas
         const salesResponse = await axios.get(
-          "https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/sales"
+          "https://tienda-391674601129.us-central1.run.app/api/sales"
         );
         setSalesData(salesResponse.data);
 
         // Obtener gastos/facturas
-        const billsResponse = await axios.get("https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/bills/");
+        const billsResponse = await axios.get("https://tienda-391674601129.us-central1.run.app/api/bills/");
         setBillsData(billsResponse.data.data);
 
       } catch (error) {

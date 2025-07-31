@@ -64,7 +64,7 @@ const InventoryTable = () => {
     }
     // Obtener productos al cargar el componente
     axios
-      .get("https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/products/products")
+      .get("https://tienda-391674601129.us-central1.run.app/api/products/products")
       .then((response) => {
         setProducts(response.data);
         setFilteredProducts(response.data);
@@ -74,21 +74,21 @@ const InventoryTable = () => {
 
     // Obtener todas las categorías desde la base de datos
     axios
-      .get("https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/products/categories") // Asegúrate de tener este endpoint
+      .get("https://tienda-391674601129.us-central1.run.app/api/products/categories") // Asegúrate de tener este endpoint
       .then((response) => {
         setCategories(response.data); // Setear las categorías en el estado
       })
       .catch((error) => console.error("Error al obtener categorías:", error));
 
     axios
-      .get("https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/products/brands") // Asegúrate de tener este endpoint
+      .get("https://tienda-391674601129.us-central1.run.app/api/products/brands") // Asegúrate de tener este endpoint
       .then((response) => {
         setBrands(response.data); // Setear las marcas en el estado
       })
       .catch((error) => console.error("Error al obtener categorías:", error));
 
     axios
-      .get("https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/products/sizeProducts") // Asegúrate de tener este endpoint
+      .get("https://tienda-391674601129.us-central1.run.app/api/products/sizeProducts") // Asegúrate de tener este endpoint
       .then((response) => {
         setSizeProducts(response.data); // Setear las categorías en el estado
       })
@@ -98,7 +98,7 @@ const InventoryTable = () => {
   const handleDelete = (id) => {
     if (window.confirm("¿Estás seguro de que deseas eliminar este producto?")) {
       axios
-        .delete(`https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/products/products/${id}`)
+        .delete(`https://tienda-391674601129.us-central1.run.app/api/products/products/${id}`)
         .then((response) => {
           console.log("Producto eliminado:", response.data);
           // Filtrar el producto eliminado de la lista de productos
@@ -145,7 +145,7 @@ const InventoryTable = () => {
 
     axios
       .put(
-        `https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/products/products/${editProduct._id}`,
+        `https://tienda-391674601129.us-central1.run.app/api/products/products/${editProduct._id}`,
         editProduct
       )
       .then((response) => {
@@ -246,11 +246,11 @@ const InventoryTable = () => {
     };
 
     axios
-      .post("https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/sales/register", saleData)
+      .post("https://tienda-391674601129.us-central1.run.app/api/sales/register", saleData)
       .then(() => {
         // Actualizar stock después de registrar la venta
         axios
-          .put("https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/products/update-stock", {
+          .put("https://tienda-391674601129.us-central1.run.app/api/products/update-stock", {
             products: saleData.products,
           })
           .then((response) => {
@@ -324,7 +324,7 @@ const InventoryTable = () => {
 
     // Enviar el nuevo producto al backend
     axios
-      .post("https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/products/products", newProduct)
+      .post("https://tienda-391674601129.us-central1.run.app/api/products/products", newProduct)
       .then((response) => {
         console.log("Producto agregado exitosamente:", response.data);
         setProducts([...products, response.data]); // Agregar el producto a la lista

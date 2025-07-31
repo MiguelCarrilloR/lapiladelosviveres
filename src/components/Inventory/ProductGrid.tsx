@@ -1,14 +1,20 @@
 // components/ProductGrid.tsx
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useProducts } from '../../context/ProductContext';
 import ProductForm from './ProductForm';
 import SaleForm from './SaleForm';
-import { Search, ChevronLeft, ChevronRight, Package, Tag, Building, Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, Plus, Download, Upload } from 'lucide-react';
 import React from 'react';
 import Toastify from "toastify-js";
 import "toastify-js/src/toastify.css";
+import { AgGridReact } from 'ag-grid-react';
+import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-alpine.css';
+import { ColDef, ICellRendererParams, GridReadyEvent, GridApi, ColumnApi } from 'ag-grid-community';
 
-const PRODUCTS_PER_PAGE = 20;
+// Registrar los módulos de AG Grid
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 interface Product {
   _id: string;
@@ -20,86 +26,250 @@ interface Product {
   stock: number;
 }
 
+// Componente personalizado para las acciones
+const ActionsCellRenderer = ({ data, context }: ICellRendererParams) => {
+  const { handleEdit, handleDelete } = context;
+
+  return (
+    <div className="flex items-center justify-center gap-2 h-full">
+      <button
+        onClick={() => handleEdit(data._id)}
+        className="flex items-center justify-center w-8 h-8 text-blue-600 border border-blue-300 rounded hover:bg-blue-50 transition-colors"
+        title="Editar producto"
+      >
+        <Edit className="w-4 h-4" />
+      </button>
+      <button
+        onClick={() => handleDelete(data._id)}
+        className="flex items-center justify-center w-8 h-8 text-red-600 border border-red-300 rounded hover:bg-red-50 transition-colors"
+        title="Eliminar producto"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+    </div>
+  );
+};
+
+// Componente personalizado para el precio
+const PriceCellRenderer = ({ value }: ICellRendererParams) => {
+  return (
+    <div className="text-right font-semibold">
+      ${value?.toLocaleString() || 'N/A'}
+    </div>
+  );
+};
+
+// Componente personalizado para el stock
+const StockCellRenderer = ({ value }: ICellRendererParams) => {
+  return (
+    <div className="flex items-center justify-center">
+      <span className={`px-2 py-1 rounded text-sm ${
+        value === 0 
+          ? 'bg-red-100 text-red-800' 
+          : value < 10 
+            ? 'bg-yellow-100 text-yellow-800'
+            : 'bg-green-100 text-green-800'
+      }`}>
+        {value || 0}
+      </span>
+    </div>
+  );
+};
+
 const ProductGrid = () => {
   const { products, loading, error, updateProduct, deleteProduct } = useProducts();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [gridApi, setGridApi] = useState<GridApi | null>(null);
+  const [columnApi, setColumnApi] = useState<ColumnApi | null>(null);
 
-  const filteredProducts = useMemo(() => {
-    if (!searchTerm) return products;
+  // Configuración de columnas para AG-Grid
+  const columnDefs: ColDef[] = useMemo(() => [
+    {
+      headerName: 'Nombre',
+      field: 'name',
+      flex: 2,
+      minWidth: 200,
+      filter: 'agTextColumnFilter',
+      sortable: true,
+      editable: true,
+      cellStyle: { fontWeight: 'bold' }
+    },
+    {
+      headerName: 'Categoría',
+      field: 'category',
+      flex: 1,
+      minWidth: 120,
+      filter: 'agTextColumnFilter',
+      sortable: true,
+      editable: true
+    },
+    {
+      headerName: 'Marca',
+      field: 'brand',
+      flex: 1,
+      minWidth: 120,
+      filter: 'agTextColumnFilter',
+      sortable: true,
+      editable: true
+    },
+    {
+      headerName: 'Tamaño',
+      field: 'sizeProduct',
+      flex: 1,
+      minWidth: 100,
+      filter: 'agTextColumnFilter',
+      sortable: true,
+      editable: true,
+      headerName: 'Talla'
+    },
+    {
+      headerName: 'Precio',
+      field: 'price',
+      flex: 1,
+      minWidth: 120,
+      filter: 'agNumberColumnFilter',
+      sortable: true,
+      editable: true,
+      cellRenderer: PriceCellRenderer,
+      cellEditor: 'agNumberCellEditor',
+      cellEditorParams: {
+        min: 0,
+        step: 100
+      }
+    },
+    {
+      headerName: 'Stock',
+      field: 'stock',
+      flex: 1,
+      minWidth: 100,
+      filter: 'agNumberColumnFilter',
+      sortable: true,
+      editable: true,
+      cellRenderer: StockCellRenderer,
+      cellEditor: 'agNumberCellEditor',
+      cellEditorParams: {
+        min: 0,
+        step: 1
+      }
+    },
+    {
+      headerName: 'Acciones',
+      field: 'actions',
+      width: 120,
+      sortable: false,
+      filter: false,
+      resizable: false,
+      pinned: 'right',
+      cellRenderer: ActionsCellRenderer,
+      suppressSizeToFit: true
+    }
+  ], []);
 
-    const search = searchTerm.toLowerCase();
-
-    return products.filter(product =>
-      (product.name?.toLowerCase() || "").includes(search) ||
-      (product.category?.toLowerCase() || "").includes(search) ||
-      (product.brand?.toLowerCase() || "").includes(search) ||
-      (product.sizeProduct?.toLowerCase() || "").includes(search)
-    );
-  }, [products, searchTerm]);
-
-  const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
-  const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
-  const paginatedProducts = filteredProducts.slice(startIndex, startIndex + PRODUCTS_PER_PAGE);
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
-  };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  // Configuración por defecto de la grilla
+  const defaultColDef: ColDef = useMemo(() => ({
+    resizable: true,
+    sortable: true,
+    filter: true,
+    floatingFilter: true,
+    suppressMenu: false
+  }), []);
 
   // Handler para eliminar producto
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     if (window.confirm("¿Estás seguro de que deseas eliminar este producto?")) {
       try {
         await deleteProduct(id);
 
-        // Mostrar notificación de éxito
         if (typeof window !== 'undefined' && window.Toastify) {
           window.Toastify({
             text: "¡Producto eliminado!",
             duration: 3000,
             close: true,
             gravity: "top",
-            position: "center",
+            position: "right",
             backgroundColor: "#4CAF50",
           }).showToast();
-        } else {
-          alert("¡Producto eliminado con éxito!");
         }
       } catch (error) {
         console.error("Error al eliminar el producto:", error);
         if (typeof window !== 'undefined' && window.Toastify) {
           window.Toastify({
-            text: "¡Ocurrió un problema para eliminar el producto!",
+            text: "¡Ocurrió un problema al eliminar el producto!",
             duration: 3000,
             close: true,
             gravity: "top",
-            position: "center",
+            position: "right",
             backgroundColor: "#FF0000",
           }).showToast();
-        } else {
-          alert("¡Ocurrió un problema para eliminar el producto!");
         }
       }
     }
-  };
+  }, [deleteProduct]);
 
-  // Handler para editar producto
-  const handleEdit = (id: string) => {
+  // Handler para editar producto (abre modal)
+  const handleEdit = useCallback((id: string) => {
     const productToEdit = products.find((product) => product._id === id);
     if (productToEdit) {
       setEditProduct(productToEdit);
       setEditModalOpen(true);
     }
-  };
+  }, [products]);
+
+  // Configuración del contexto para pasar funciones a los cell renderers
+  const gridContext = useMemo(() => ({
+    handleEdit,
+    handleDelete
+  }), [handleEdit, handleDelete]);
+
+  // Handler cuando la grilla está lista
+  const onGridReady = useCallback((params: GridReadyEvent) => {
+    setGridApi(params.api);
+    setColumnApi(params.columnApi);
+    
+    // Auto-ajustar columnas
+    params.api.sizeColumnsToFit();
+  }, []);
+
+  // Handler para cuando se edita una celda
+  const onCellValueChanged = useCallback(async (params: any) => {
+    const { data, colDef, newValue, oldValue } = params;
+    
+    if (newValue === oldValue) return;
+
+    try {
+      const updatedProduct = { ...data };
+      await updateProduct(data._id, updatedProduct);
+
+      if (typeof window !== 'undefined' && window.Toastify) {
+        window.Toastify({
+          text: `${colDef.headerName} actualizado correctamente`,
+          duration: 2000,
+          close: true,
+          gravity: "top",
+          position: "right",
+          backgroundColor: "#4CAF50",
+        }).showToast();
+      }
+    } catch (error) {
+      console.error("Error al actualizar el producto:", error);
+      
+      // Revertir el cambio en caso de error
+      params.node.setDataValue(colDef.field, oldValue);
+      
+      if (typeof window !== 'undefined' && window.Toastify) {
+        window.Toastify({
+          text: "Error al actualizar el producto",
+          duration: 3000,
+          close: true,
+          gravity: "top",
+          position: "right",
+          backgroundColor: "#FF0000",
+        }).showToast();
+      }
+    }
+  }, [updateProduct]);
 
   // Handler para cambios en el formulario de edición
   const handleEditProductChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,15 +277,19 @@ const ProductGrid = () => {
     setEditProduct(prev => prev ? { ...prev, [name]: value } : null);
   };
 
-  // Handler para actualizar producto
+  // Handler para actualizar producto desde el modal
   const handleUpdateProduct = async () => {
     if (!editProduct) return;
 
     try {
       await updateProduct(editProduct._id, editProduct);
-
       setEditModalOpen(false);
       setEditProduct(null);
+
+      // Refrescar la grilla
+      if (gridApi) {
+        gridApi.refreshCells();
+      }
 
       if (typeof window !== 'undefined' && window.Toastify) {
         window.Toastify({
@@ -123,11 +297,9 @@ const ProductGrid = () => {
           duration: 3000,
           close: true,
           gravity: "top",
-          position: "center",
+          position: "right",
           backgroundColor: "#4CAF50",
         }).showToast();
-      } else {
-        alert("¡Producto actualizado con éxito!");
       }
     } catch (error) {
       console.error("Error al actualizar el producto:", error);
@@ -135,32 +307,23 @@ const ProductGrid = () => {
     }
   };
 
-  const getVisiblePages = (): (number | string)[] => {
-    const delta = 2;
-    const range: number[] = [];
-    const rangeWithDots: (number | string)[] = [];
-
-    for (let i = Math.max(2, currentPage - delta);
-      i <= Math.min(totalPages - 1, currentPage + delta);
-      i++) {
-      range.push(i);
+  // Funciones para exportar/importar datos
+  const exportToCSV = () => {
+    if (gridApi) {
+      gridApi.exportDataAsCsv({
+        fileName: `productos_${new Date().toISOString().split('T')[0]}.csv`,
+        columnKeys: ['name', 'category', 'brand', 'sizeProduct', 'price', 'stock']
+      });
     }
+  };
 
-    if (currentPage - delta > 2) {
-      rangeWithDots.push(1, '...');
-    } else {
-      rangeWithDots.push(1);
+  const exportToExcel = () => {
+    if (gridApi) {
+      gridApi.exportDataAsExcel({
+        fileName: `productos_${new Date().toISOString().split('T')[0]}.xlsx`,
+        columnKeys: ['name', 'category', 'brand', 'sizeProduct', 'price', 'stock']
+      });
     }
-
-    rangeWithDots.push(...range);
-
-    if (currentPage + delta < totalPages - 1) {
-      rangeWithDots.push('...', totalPages);
-    } else if (totalPages > 1) {
-      rangeWithDots.push(totalPages);
-    }
-
-    return rangeWithDots;
   };
 
   if (loading) {
@@ -181,222 +344,93 @@ const ProductGrid = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Search Bar */}
+      {/* Toolbar */}
       <div className="sticky top-[73px] z-30 bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto p-4">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Buscar productos..."
-              value={searchTerm}
-              onChange={handleSearchChange}
-              className="w-full p-3 pl-10 pr-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <Search className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
+        <div className="max-w-full mx-auto p-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Gestión de Productos
+              </h2>
+              <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                {products.length} productos
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              
+
+              <div className="h-6 w-px bg-gray-300 mx-2" />
+
+              <button
+                onClick={() => gridApi?.setFilterModel(null)}
+                className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+              >
+                Limpiar Filtros
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="max-w-4xl mx-auto p-4">
-        {/* Results Info */}
-        {filteredProducts.length > 0 && (
-          <div className="mb-4 text-sm text-gray-600 flex justify-between items-center">
-            <span>
-              {startIndex + 1}-{Math.min(startIndex + PRODUCTS_PER_PAGE, filteredProducts.length)} de {filteredProducts.length} productos
-            </span>
-            <span className="text-xs text-gray-500">
-              Página {currentPage} de {totalPages}
-            </span>
-          </div>
-        )}
-
-        {filteredProducts.length === 0 ? (
-          <div className="text-center text-gray-500 py-16">
-            <Search className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No se encontraron productos</h3>
-            <p className="text-sm">Intenta con otros términos de búsqueda</p>
-          </div>
-        ) : (
-          <>
-            {/* Product List */}
-            <div className="space-y-1 mb-6">
-              {paginatedProducts.map((product, index) => (
-                <div
-                  key={product._id}
-                  className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'
-                    }`}
-                >
-                  {/* Desktop Layout */}
-                  <div className="hidden sm:flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-2">
-                        <Package className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                        <h3 className="font-medium text-gray-900 truncate">
-                          {product.name}
-                        </h3>
-                      </div>
-                      <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <Tag className="w-3 h-3" />
-                          <span>{product.category}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Building className="w-3 h-3" />
-                          <span>{product.brand}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Tamaño:</span> {product.sizeProduct}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 ml-4">
-                      <div className="flex flex-col items-end gap-1">
-                        <div className="text-lg font-semibold text-gray-900">
-                          ${product.price?.toLocaleString() || 'N/A'}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          Stock: {product.stock || 0}
-                        </div>
-                        {product.stock === 0 && (
-                          <span className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
-                            Agotado
-                          </span>
-                        )}
-                      </div>
-                      {/* Botones de acción */}
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleEdit(product._id)}
-                          className="flex items-center gap-1 px-3 py-2 text-sm text-blue-600 border border-blue-300 rounded-md hover:bg-blue-50 transition-colors"
-                          title="Editar producto"
-                        >
-                          <Edit className="w-4 h-4" />
-                          <span className="hidden lg:inline">Editar</span>
-                        </button>
-                        <button
-                          onClick={() => handleDelete(product._id)}
-                          className="flex items-center gap-1 px-3 py-2 text-sm text-red-600 border border-red-300 rounded-md hover:bg-red-50 transition-colors"
-                          title="Eliminar producto"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          <span className="hidden lg:inline">Eliminar</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Mobile Layout */}
-                  <div className="sm:hidden">
-                    {/* Título y categoría */}
-                    <div className="flex items-start gap-3 mb-3">
-                      <Package className="w-4 h-4 text-gray-400 flex-shrink-0 mt-1" />
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-gray-900 text-base leading-tight mb-1">
-                          {product.name}
-                        </h3>
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <div className="flex items-center gap-1">
-                            <Tag className="w-3 h-3" />
-                            <span>{product.category}</span>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-1">
-                              <Building className="w-3 h-3" />
-                              <span>{product.brand}</span>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">Talla:</span> {product.sizeProduct}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Precio, stock y botones en una fila */}
-                    <div className="flex items-center justify-between">
-                      {/* Precio y stock */}
-                      <div className="flex flex-col">
-                        <div className="text-lg font-semibold text-gray-900">
-                          ${product.price?.toLocaleString() || 'N/A'}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-500">
-                            Stock: {product.stock || 0}
-                          </span>
-                          {product.stock === 0 && (
-                            <span className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
-                              Agotado
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Botones de acción */}
-                      <div className="flex gap-2 flex-shrink-0">
-                        <button
-                          onClick={() => handleEdit(product._id)}
-                          className="flex items-center justify-center w-10 h-10 text-blue-600 border border-blue-300 rounded-md hover:bg-blue-50 transition-colors"
-                          title="Editar producto"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(product._id)}
-                          className="flex items-center justify-center w-10 h-10 text-red-600 border border-red-300 rounded-md hover:bg-red-50 transition-colors"
-                          title="Eliminar producto"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Simple Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 py-4">
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  <span className="hidden sm:inline">Anterior</span>
-                </button>
-
-                <div className="flex items-center gap-1">
-                  {getVisiblePages().map((page, index) => (
-                    <button
-                      key={index}
-                      onClick={() => typeof page === 'number' && handlePageChange(page)}
-                      disabled={page === '...'}
-                      className={`px-3 py-2 text-sm rounded-md ${page === currentPage
-                          ? 'bg-blue-600 text-white'
-                          : page === '...'
-                            ? 'text-gray-400 cursor-default'
-                            : 'text-gray-600 hover:bg-gray-100'
-                        }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-                </div>
-
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <span className="hidden sm:inline">Siguiente</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-          </>
-        )}
+      {/* AG-Grid */}
+      <div className="h-[calc(100vh-200px)] p-4">
+        <div className="ag-theme-alpine h-full w-full">
+          <AgGridReact
+            rowData={products}
+            columnDefs={columnDefs}
+            defaultColDef={defaultColDef}
+            context={gridContext}
+            onGridReady={onGridReady}
+            onCellValueChanged={onCellValueChanged}
+            animateRows={true}
+            rowSelection="multiple"
+            suppressCellFocus={false}
+            enableCellTextSelection={true}
+            ensureDomOrder={true}
+            stopEditingWhenCellsLoseFocus={true}
+            rowHeight={50}
+            headerHeight={50}
+            floatingFiltersHeight={35}
+            suppressRowClickSelection={true}
+            suppressRowHoverHighlight={false}
+            enableRangeSelection={true}
+            enableFillHandle={true}
+            undoRedoCellEditing={true}
+            undoRedoCellEditingLimit={20}
+            suppressScrollOnNewData={true}
+            getRowId={(params) => params.data._id}
+            localeText={{
+              // Traducciones al español
+              page: 'Página',
+              more: 'Más',
+              to: 'a',
+              of: 'de',
+              next: 'Siguiente',
+              last: 'Último',
+              first: 'Primero',
+              previous: 'Anterior',
+              loadingOoo: 'Cargando...',
+              selectAll: 'Seleccionar Todo',
+              searchOoo: 'Buscar...',
+              blanks: 'En Blanco',
+              filterOoo: 'Filtrar...',
+              applyFilter: 'Aplicar Filtro',
+              clearFilter: 'Limpiar Filtro',
+              equals: 'Igual',
+              notEqual: 'No Igual',
+              lessThan: 'Menor que',
+              greaterThan: 'Mayor que',
+              lessThanOrEqual: 'Menor o igual que',
+              greaterThanOrEqual: 'Mayor o igual que',
+              inRange: 'En rango',
+              contains: 'Contiene',
+              notContains: 'No contiene',
+              startsWith: 'Empieza con',
+              endsWith: 'Termina con'
+            }}
+          />
+        </div>
       </div>
 
       {/* Modal para editar producto */}

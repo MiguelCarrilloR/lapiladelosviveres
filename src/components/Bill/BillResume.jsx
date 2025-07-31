@@ -37,7 +37,7 @@ const BillResume = () => {
   const fetchBills = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/bills');
+      const response = await axios.get('https://tienda-391674601129.us-central1.run.app/api/bills');
       setBills(response.data.data || []);
     } catch (error) {
       console.error('Error:', error);
@@ -51,7 +51,7 @@ const BillResume = () => {
     if (window.confirm('¿Eliminar esta factura?')) {
       try {
         setLoading(true);
-        await axios.delete(`https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/bills/${id}`);
+        await axios.delete(`https://tienda-391674601129.us-central1.run.app/api/bills/${id}`);
         setBills(bills.filter(bill => bill._id !== id));
       } catch (error) {
         console.error('Error:', error);
@@ -97,7 +97,7 @@ const BillResume = () => {
         totalAmount
       };
 
-      await axios.put(`https://mi-backend-qjzmi4zc5q-uc.a.run.app/api/bills/${editingBill}`, updatedBill);
+      await axios.put(`https://tienda-391674601129.us-central1.run.app/api/bills/${editingBill}`, updatedBill);
 
       setBills(bills.map(bill =>
         bill._id === editingBill
